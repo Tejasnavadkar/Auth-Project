@@ -1,0 +1,24 @@
+// filepath: e:\Projects\Auth_Project\Auth-Server\.vscode\tasks.json
+{
+	"version": "2.0.0",
+	"tasks": [
+	  {
+		"label": "tsc: watch - tsconfig.json",
+		"type": "shell",
+		"command": "tsc --watch -p .",
+		"group": {
+		  "kind": "build",
+		  "isDefault": true
+		},
+		"problemMatcher": ["$tsc-watch"],
+		"isBackground": true,
+		"presentation": {
+		  "reveal": "always",
+		  "panel": "dedicated"
+		},
+		"runOptions": {
+		  "runOn": "folderOpen"
+		}
+	  }
+	]
+  }
