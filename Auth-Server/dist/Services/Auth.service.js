@@ -13,8 +13,25 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const UserModel_1 = __importDefault(require("../Models/UserModel"));
-const FindUserWithEmailOrUsername = (email_1, ...args_1) => __awaiter(void 0, [email_1, ...args_1], void 0, function* (email, username = '') {
-    return yield UserModel_1.default.findOne({ $or: [{ email }, { username }] });
+const ErrorHandler_1 = __importDefault(require("../utils/ErrorHandler"));
+const FindUser = (_a) => __awaiter(void 0, [_a], void 0, function* ({ id, email, username = '', selectedField = null }) {
+    const query = []; // here email or id or username present we add it an array and then pass that array to $or[] here bcoz we dont pass null value to $or[]
+    if (id)
+        query.push({ _id: id });
+    if (email)
+        query.push({ email });
+    if (username)
+        query.push({ username });
+    let userQuery = UserModel_1.default.findOne({ $or: query });
+    if (!userQuery) {
+        throw new ErrorHandler_1.default('user not found', 401);
+    }
+    if (selectedField !== null) {
+        userQuery = userQuery.select(selectedField.join(' ')); //select method provided by Mongoose. This method allows you to specify which fields to include or exclude in the query result.
+        return userQuery;
+    }
+    const user = yield userQuery.exec(); //  The query is executed using the exec method, which returns the user document.
+    return user;
 });
 const CreateUserOrUpdate = (userData_1, ...args_1) => __awaiter(void 0, [userData_1, ...args_1], void 0, function* (userData, updatedUser = {}) {
     // in the case of update 
@@ -34,6 +51,7 @@ const CreateUserOrUpdate = (userData_1, ...args_1) => __awaiter(void 0, [userDat
     return yield user.save();
 });
 exports.default = {
-    FindUserWithEmailOrUsername,
+    FindUser,
     CreateUserOrUpdate
 };
+// In this above findUser service code, the select method is used with a string containing the fields to exclude, each prefixed with a minus sign (-). This ensures that the otp, password, and refreshtoken fields are not included in the result returned by the FindUser function.

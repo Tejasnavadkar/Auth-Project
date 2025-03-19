@@ -4,12 +4,28 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const ErrorHandler_1 = __importDefault(require("./ErrorHandler"));
 const generateJwtToken = (payload, expiresIn) => {
     if (!process.env.JWT_SECRET) {
         throw new Error("JWT_SECRET is not defined");
     }
     return jsonwebtoken_1.default.sign(payload, process.env.JWT_SECRET, { expiresIn: expiresIn });
 };
+const verifyToken = (token, secret) => {
+    try {
+        const decode = jsonwebtoken_1.default.verify(token, secret);
+        return decode;
+    }
+    catch (err) {
+        if (err.name === 'TokenExpiredError') {
+            throw new ErrorHandler_1.default('token expired', 401);
+        }
+        else {
+            throw new ErrorHandler_1.default('invalid token', 401);
+        }
+    }
+};
 exports.default = {
     generateJwtToken,
+    verifyToken
 };

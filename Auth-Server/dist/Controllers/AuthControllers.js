@@ -21,12 +21,29 @@ const ErrorHandler_1 = __importDefault(require("../utils/ErrorHandler"));
 const Mail_services_1 = __importDefault(require("../Services/Mail.services"));
 const FieldValidation_1 = __importDefault(require("../utils/FieldValidation"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const getUsers = (req, res) => {
-};
+const getUserById = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // extract userId that we attched in middleware here if user/:userid then req.params.userId if in headers/query then req.query.params
+        const userId = req.userId;
+        console.log('userId', userId);
+        const user = yield Auth_service_1.default.FindUser({ id: userId, selectedField: ['-password', '-otp', '-refreshToken', '-__v'] }); // we dont want these fields from db document so we use select mongoose method
+        if (!user) {
+            throw new ErrorHandler_1.default('user with this id not found');
+        }
+        res.status(200).json({
+            msg: 'user fetched..',
+            data: user
+        });
+    }
+    catch (error) {
+        // throw new ErrorHandler(error)
+        next(error);
+    }
+});
 const loginUser = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const data = req.body;
     try {
-        const isUserExist = yield Auth_service_1.default.FindUserWithEmailOrUsername(data.email);
+        const isUserExist = yield Auth_service_1.default.FindUser({ email: data.email });
         if (!isUserExist) {
             //    res.status(401).json({
             //         error: true,
@@ -91,7 +108,7 @@ const registerUser = (req, res, next) => __awaiter(void 0, void 0, void 0, funct
             });
             return;
         }
-        const isUserExist = yield Auth_service_1.default.FindUserWithEmailOrUsername(data.email, data.username); // agar email or username already exist hai
+        const isUserExist = yield Auth_service_1.default.FindUser({ email: data.email, username: data.username }); // agar email or username already exist hai
         if (isUserExist) {
             // res.status(401).json({
             //     error: true,
@@ -127,6 +144,14 @@ const registerUser = (req, res, next) => __awaiter(void 0, void 0, void 0, funct
         // const updatedUser = await CreatedUser.save()  
         // here we update user with otp
         const updatedUser = yield Auth_service_1.default.CreateUserOrUpdate(CreatedUser, { otp: verificationOtp.toString(), _id: CreatedUser._id }); // so here write create logoc in services and make it reusable
+        res.cookie('AccessToken', token, {
+            httpOnly: true,
+            secure: true
+        });
+        res.cookie('RefreshToken', refreshToken, {
+            httpOnly: true,
+            secure: true
+        });
         res.status(201).json({
             error: false,
             user: updatedUser
@@ -145,16 +170,34 @@ const refreshToken = (req, res, next) => __awaiter(void 0, void 0, void 0, funct
         if (!process.env.JWT_SECRET) {
             throw Error('secret key not found');
         }
-        const { err, decoded } = jsonwebtoken_1.default.verify(refreshToken, process.env.JWT_SECRET, (err, decoded) => {
-            return { err, decoded };
-        });
-        if (err) {
-            next(new ErrorHandler_1.default('Invalid Token', 401));
-        }
-        const user = yield UserModel_1.default.findOne({ email: decoded.data.email });
-        if (!user) {
-            throw new ErrorHandler_1.default('user not found', 404);
-        }
+        jsonwebtoken_1.default.verify(refreshToken, process.env.JWT_SECRET, (err, decoded) => __awaiter(void 0, void 0, void 0, function* () {
+            if (err) {
+                return next(new ErrorHandler_1.default('Invalid Token', 401));
+            }
+            const user = yield UserModel_1.default.findOne({ email: decoded.data.email });
+            if (!user) {
+                return next(new ErrorHandler_1.default('user not found', 404));
+            }
+            // Continue with your logic here, e.g., generating a new token, etc.
+            if (user.refreshToken !== refreshToken) {
+                return next(new ErrorHandler_1.default('Refresh token is not valid', 401));
+            }
+            const AccessToken = Handlers_1.default.generateJwtToken({ _id: user === null || user === void 0 ? void 0 : user._id.toString(), email: user.email }, 60 * 60);
+            // const newRefreshToken = Handlers.generateJwtToken({ _id: user?._id.toString(), email: user.email }, '7d')
+            // now clear existing coockies
+            res.clearCookie('AccessToken', {
+                httpOnly: true,
+                secure: true
+            });
+            // res.clearCookie('RefreshToken', {
+            //     httpOnly: true,
+            //     secure: true
+            // })
+            res.status(201).cookie('AccessToken', AccessToken, { httpOnly: true, secure: true }).json({
+                AccessToken: AccessToken,
+                msg: 'AccessToken generated'
+            });
+        }));
     }
     catch (error) {
         next(error);
@@ -162,4 +205,36 @@ const refreshToken = (req, res, next) => __awaiter(void 0, void 0, void 0, funct
 });
 const logout = (req, res, next) => {
 };
-exports.default = { getUsers, loginUser, registerUser, logout, refreshToken };
+const verifyMailController = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const email = req.email;
+        const { otp } = req.body;
+        //  console.log('userId--',userId)
+        const user = yield Auth_service_1.default.FindUser({ email: email });
+        if (!user) {
+            throw new ErrorHandler_1.default('user with this userId not found', 401);
+        }
+        console.log(user.otp, otp);
+        if ((user === null || user === void 0 ? void 0 : user.otp) !== otp) {
+            throw new ErrorHandler_1.default('otp not matched');
+        }
+        const updatedUser = yield Auth_service_1.default.CreateUserOrUpdate(user, { _id: user === null || user === void 0 ? void 0 : user._id, email_Verified: true });
+        console.log('updatedUser--', updatedUser);
+    }
+    catch (error) {
+        next(error);
+    }
+});
+const forgetPasswordController = (req, res, next) => {
+};
+const resetPasswordController = (req, res, next) => { };
+exports.default = {
+    getUserById,
+    loginUser,
+    registerUser,
+    logout,
+    refreshToken,
+    verifyMailController,
+    forgetPasswordController,
+    resetPasswordController
+};

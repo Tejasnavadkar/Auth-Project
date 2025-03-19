@@ -1,4 +1,5 @@
 import UserModel from "../Models/UserModel"
+import ErrorHandler from "../utils/ErrorHandler"
 
 interface CreateUserType {
     username:string,
@@ -6,16 +7,42 @@ interface CreateUserType {
     password:string
 }
 
+interface PropsType { 
+    id?:string, 
+    email?:string, 
+    username?:string,
+    selectedField?:string[] | null
+}
+
 interface updatedUser {
     verificationOtp?:string,
     id?:string
-    [key: string]: any
+    [key: string]: any,
+    
 }
 
 
-const FindUserWithEmailOrUsername = async ( email:string, username:string= '') => {
-   return await UserModel.findOne({ $or: [{ email }, { username }] });
+const FindUser = async ({ id, email, username = '',selectedField = null}:PropsType) => {
+   const query = [];   // here email or id or username present we add it an array and then pass that array to $or[] here bcoz we dont pass null value to $or[]
+   if (id) query.push({ _id: id });
+   if (email) query.push({ email });
+   if (username) query.push({ username });
+
+    let userQuery = UserModel.findOne({ $or: query });
+
+    if(!userQuery){
+        throw new ErrorHandler('user not found',401)
+    }
+
+    if(selectedField !== null){
+       userQuery = userQuery.select(selectedField.join(' ')) //select method provided by Mongoose. This method allows you to specify which fields to include or exclude in the query result.
+       return userQuery
+    }
+   const user = await userQuery.exec() //  The query is executed using the exec method, which returns the user document.
+
+   return user
 }
+
 
 const CreateUserOrUpdate = async (userData:CreateUserType,updatedUser:updatedUser = {}) :Promise<object | null> =>{
      // in the case of update 
@@ -38,6 +65,9 @@ const CreateUserOrUpdate = async (userData:CreateUserType,updatedUser:updatedUse
 }
 
 export default {
-    FindUserWithEmailOrUsername,
+    FindUser,
     CreateUserOrUpdate
 }
+
+
+// In this above findUser service code, the select method is used with a string containing the fields to exclude, each prefixed with a minus sign (-). This ensures that the otp, password, and refreshtoken fields are not included in the result returned by the FindUser function.

@@ -12,10 +12,35 @@ import { validationResult } from 'express-validator'
 import isFieldInputValidate from '../utils/FieldValidation'
 import getOtp from '../utils/generateOtp'
 import jwt from 'jsonwebtoken'
+import { strict } from 'assert'
 
 
 
-const getUsers = (req: Request, res: Response) => {
+const getUserById = async (req: Request, res: Response, next: NextFunction) => {
+
+    try {
+        // extract userId that we attched in middleware here if user/:userid then req.params.userId if in headers/query then req.query.params
+        const userId = req.userId
+        console.log('userId', userId)
+
+        const user = await AuthService.FindUser({ id: userId, selectedField: ['-password', '-otp', '-refreshToken', '-__v'] }) // we dont want these fields from db document so we use select mongoose method
+
+        if (!user) {
+            throw new ErrorHandler('user with this id not found')
+        }
+
+        res.status(200).json({
+            msg: 'user fetched..',
+            data: user
+        })
+
+    } catch (error: any) {
+
+        // throw new ErrorHandler(error)
+        next(error)
+
+    }
+
 
 }
 
@@ -24,7 +49,7 @@ const loginUser = async (req: Request, res: Response, next: NextFunction): Promi
     const data = req.body
 
     try {
-        const isUserExist = await AuthService.FindUserWithEmailOrUsername(data.email)
+        const isUserExist = await AuthService.FindUser({ email: data.email })
 
         if (!isUserExist) {
             //    res.status(401).json({
@@ -111,7 +136,7 @@ const registerUser = async (req: Request, res: Response, next: NextFunction): Pr
             return
         }
 
-        const isUserExist = await AuthService.FindUserWithEmailOrUsername(data.email, data.username)  // agar email or username already exist hai
+        const isUserExist = await AuthService.FindUser({ email: data.email, username: data.username })  // agar email or username already exist hai
         if (isUserExist) {
             // res.status(401).json({
             //     error: true,
@@ -158,6 +183,15 @@ const registerUser = async (req: Request, res: Response, next: NextFunction): Pr
 
         // here we update user with otp
         const updatedUser = await AuthService.CreateUserOrUpdate(CreatedUser, { otp: verificationOtp.toString(), _id: CreatedUser._id }) // so here write create logoc in services and make it reusable
+        res.cookie('AccessToken', token, {
+            httpOnly: true,
+            secure: true
+        })
+
+        res.cookie('RefreshToken', refreshToken, {
+            httpOnly: true,
+            secure: true
+        })
 
         res.status(201).json({
             error: false,
@@ -187,19 +221,45 @@ const refreshToken = async (req: Request, res: Response, next: NextFunction) => 
 
 
 
-        const { err, decoded } = jwt.verify(refreshToken, process.env.JWT_SECRET, (err: any, decoded: any): object => {
-            return { err, decoded };
+        jwt.verify(refreshToken, process.env.JWT_SECRET, async (err: any, decoded: any) => {
+            if (err) {
+                return next(new ErrorHandler('Invalid Token', 401));
+            }
+
+            const user = await UserModel.findOne({ email: decoded.data.email });
+
+            if (!user) {
+                return next(new ErrorHandler('user not found', 404));
+            }
+
+            // Continue with your logic here, e.g., generating a new token, etc.
+
+            if (user.refreshToken !== refreshToken) {
+                return next(new ErrorHandler('Refresh token is not valid', 401))
+            }
+
+            const AccessToken = Handlers.generateJwtToken({ _id: user?._id.toString(), email: user.email }, 60 * 60)
+            // const newRefreshToken = Handlers.generateJwtToken({ _id: user?._id.toString(), email: user.email }, '7d')
+
+            // now clear existing coockies
+
+            res.clearCookie('AccessToken', {
+                httpOnly: true,
+                secure: true
+            })
+
+            // res.clearCookie('RefreshToken', {
+            //     httpOnly: true,
+            //     secure: true
+            // })
+
+
+
+            res.status(201).cookie('AccessToken', AccessToken, { httpOnly: true, secure: true }).json({
+                AccessToken: AccessToken,
+                msg: 'AccessToken generated'
+            })
         });
-
-        if (err) {
-            next(new ErrorHandler('Invalid Token', 401))
-        }
-
-       const user = await UserModel.findOne({email:decoded.data.email})
-
-       if(!user){
-        throw new ErrorHandler('user not found',404)
-       }
 
     } catch (error) {
 
@@ -216,4 +276,55 @@ const logout = (req: Request, res: Response, next: NextFunction) => {
 
 }
 
-export default { getUsers, loginUser, registerUser, logout, refreshToken }
+const verifyMailController = async (req: Request, res: Response, next: NextFunction) => {
+  
+    try {
+        const email = req.email  
+        const {otp} = req.body
+    //  console.log('userId--',userId)
+       const user = await AuthService.FindUser({email:email})
+
+       if(!user){
+        throw new ErrorHandler('user with this userId not found',401)
+       }
+
+       console.log(user.otp,otp)
+
+       if(user?.otp !== otp){
+        throw new ErrorHandler('otp not matched')
+       }
+
+      const updatedUser = await AuthService.CreateUserOrUpdate(user,{_id:user?._id,email_Verified:true})
+      console.log('updatedUser--',updatedUser)
+
+
+    } catch (error) {
+
+        next(error)
+        
+    }
+
+
+   
+
+
+
+}
+
+const forgetPasswordController = (req: Request, res: Response, next: NextFunction) => {
+
+}
+
+const resetPasswordController = (req: Request, res: Response, next: NextFunction) => { }
+
+export default {
+    getUserById,
+    loginUser,
+    registerUser,
+    logout,
+    refreshToken,
+    verifyMailController,
+    forgetPasswordController,
+    resetPasswordController
+
+}
