@@ -18,6 +18,7 @@ interface updatedUser {
     verificationOtp?:string,
     id?:string
     [key: string]: any,
+    password?:string
     
 }
 

@@ -13,9 +13,20 @@ import isFieldInputValidate from '../utils/FieldValidation'
 import getOtp from '../utils/generateOtp'
 import jwt from 'jsonwebtoken'
 import { strict } from 'assert'
+import { error } from 'console'
+
+// interface userType{
+//     email: string;
+//     username: string;
+//     password: string;
+//     email_Verified: boolean;
+//     refreshToken?: string | null | undefined;
+//     otp?: string | null | undefined;
+// }
 
 
 
+// get userById api
 const getUserById = async (req: Request, res: Response, next: NextFunction) => {
 
     try {
@@ -44,6 +55,7 @@ const getUserById = async (req: Request, res: Response, next: NextFunction) => {
 
 }
 
+// login user api
 const loginUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
 
     const data = req.body
@@ -121,6 +133,7 @@ const loginUser = async (req: Request, res: Response, next: NextFunction): Promi
 
 }
 
+// register user api
 const registerUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
 
     try {
@@ -206,6 +219,7 @@ const registerUser = async (req: Request, res: Response, next: NextFunction): Pr
 
 }
 
+// get refresh token api
 const refreshToken = async (req: Request, res: Response, next: NextFunction) => {
 
     try {
@@ -272,10 +286,7 @@ const refreshToken = async (req: Request, res: Response, next: NextFunction) => 
 
 }
 
-const logout = (req: Request, res: Response, next: NextFunction) => {
-
-}
-
+// email verification api
 const verifyMailController = async (req: Request, res: Response, next: NextFunction) => {
   
     try {
@@ -296,7 +307,11 @@ const verifyMailController = async (req: Request, res: Response, next: NextFunct
 
       const updatedUser = await AuthService.CreateUserOrUpdate(user,{_id:user?._id,email_Verified:true})
       console.log('updatedUser--',updatedUser)
-
+      res.status(201).json({
+        msg:'Email verification successful',
+        user:updatedUser
+      })
+      return
 
     } catch (error) {
 
@@ -311,17 +326,121 @@ const verifyMailController = async (req: Request, res: Response, next: NextFunct
 
 }
 
-const forgetPasswordController = (req: Request, res: Response, next: NextFunction) => {
+const forgetPasswordController = async (req: Request, res: Response, next: NextFunction) => {
+    // first receive email
+    // then find user with email
+    // create another service in mailService
+    // generate token
+    // send email to route the reset-password page and pass token also
+
+    try {
+        const {email} = req.body
+        const user = await AuthService.FindUser({email:email})
+
+        if(!user){
+            throw new ErrorHandler('user with this email not found',401)
+        }
+
+           // Convert _id to string if necessary
+           const userWithStringId = {
+            ...user.toObject(),
+            _id: user._id.toString(),
+        };
+
+       const token = await MailServices.SendResetPasswordMail(userWithStringId)
+
+       console.log('token-form-forgotmail',token)
+
+       res.status(201).json({
+        error:false,
+        msg:'Link has been send to verified mail'
+       })
+       return
+
+    } catch (error) {
+
+        next(error)
+        
+    }
+
 
 }
 
-const resetPasswordController = (req: Request, res: Response, next: NextFunction) => { }
+const resetPasswordController = async (req: Request, res: Response, next: NextFunction) => { 
+
+    try {
+        const {password} = req.body
+        const token = req.headers.authorization?.split(" ")[1]
+        const email = req.email
+
+       const user = await AuthService.FindUser({email:email})
+
+       if(!user){
+        throw new ErrorHandler('password with this email not found',401)
+       }
+
+       const hashedPassword = await HashPassword(password)
+
+      const updatedUser = await AuthService.CreateUserOrUpdate(user,{_id:user._id,password:hashedPassword})
+
+       if(!updatedUser){
+        throw new ErrorHandler('unable to update user with password')
+       }
+
+       res.status(200).json({
+        msg:'reset password successfully',
+        user:updatedUser
+       })
+
+
+    } catch (error) {
+        next(error)
+    }
+
+}
+
+// logout api
+const logoutController = async (req: Request, res: Response, next: NextFunction) => {
+
+    // best practice:- create different model to blacklist token refer uber repo
+
+   try {
+    const email = req.email
+
+    const user = await AuthService.FindUser({email:email})
+    if(!user){
+     throw new ErrorHandler('user not found with this email')
+    }
+   // clearing cookies 
+    res.clearCookie('AccessToken',{
+     httpOnly:true,
+     secure:false,
+     sameSite:'lax'
+    })
+ 
+    res.clearCookie('RefreshToken',{
+     httpOnly:true,
+     secure:false,
+     sameSite:'lax'
+    })
+ 
+     res.status(200).json({
+         error:false,
+         msg:'user logged out'
+     })
+   } catch (error) {
+      next(error)
+   }
+
+
+
+}
 
 export default {
     getUserById,
     loginUser,
     registerUser,
-    logout,
+    logoutController,
     refreshToken,
     verifyMailController,
     forgetPasswordController,

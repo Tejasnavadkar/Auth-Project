@@ -21,6 +21,15 @@ const ErrorHandler_1 = __importDefault(require("../utils/ErrorHandler"));
 const Mail_services_1 = __importDefault(require("../Services/Mail.services"));
 const FieldValidation_1 = __importDefault(require("../utils/FieldValidation"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+// interface userType{
+//     email: string;
+//     username: string;
+//     password: string;
+//     email_Verified: boolean;
+//     refreshToken?: string | null | undefined;
+//     otp?: string | null | undefined;
+// }
+// get userById api
 const getUserById = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         // extract userId that we attched in middleware here if user/:userid then req.params.userId if in headers/query then req.query.params
@@ -40,6 +49,7 @@ const getUserById = (req, res, next) => __awaiter(void 0, void 0, void 0, functi
         next(error);
     }
 });
+// login user api
 const loginUser = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const data = req.body;
     try {
@@ -98,6 +108,7 @@ const loginUser = (req, res, next) => __awaiter(void 0, void 0, void 0, function
         next(error);
     }
 });
+// register user api
 const registerUser = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const data = req.body;
@@ -161,6 +172,7 @@ const registerUser = (req, res, next) => __awaiter(void 0, void 0, void 0, funct
         throw new Error(`err while creating user-- ${error.message}`);
     }
 });
+// get refresh token api
 const refreshToken = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const refreshToken = req.body.refreshToken || req.cookies.refreshToken;
@@ -203,8 +215,7 @@ const refreshToken = (req, res, next) => __awaiter(void 0, void 0, void 0, funct
         next(error);
     }
 });
-const logout = (req, res, next) => {
-};
+// email verification api
 const verifyMailController = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const email = req.email;
@@ -220,19 +231,100 @@ const verifyMailController = (req, res, next) => __awaiter(void 0, void 0, void 
         }
         const updatedUser = yield Auth_service_1.default.CreateUserOrUpdate(user, { _id: user === null || user === void 0 ? void 0 : user._id, email_Verified: true });
         console.log('updatedUser--', updatedUser);
+        res.status(201).json({
+            msg: 'Email verification successful',
+            user: updatedUser
+        });
+        return;
     }
     catch (error) {
         next(error);
     }
 });
-const forgetPasswordController = (req, res, next) => {
-};
-const resetPasswordController = (req, res, next) => { };
+const forgetPasswordController = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    // first receive email
+    // then find user with email
+    // create another service in mailService
+    // generate token
+    // send email to route the reset-password page and pass token also
+    try {
+        const { email } = req.body;
+        const user = yield Auth_service_1.default.FindUser({ email: email });
+        if (!user) {
+            throw new ErrorHandler_1.default('user with this email not found', 401);
+        }
+        // Convert _id to string if necessary
+        const userWithStringId = Object.assign(Object.assign({}, user.toObject()), { _id: user._id.toString() });
+        const token = yield Mail_services_1.default.SendResetPasswordMail(userWithStringId);
+        console.log('token-form-forgotmail', token);
+        res.status(201).json({
+            error: false,
+            msg: 'Link has been send to verified mail'
+        });
+        return;
+    }
+    catch (error) {
+        next(error);
+    }
+});
+const resetPasswordController = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    try {
+        const { password } = req.body;
+        const token = (_a = req.headers.authorization) === null || _a === void 0 ? void 0 : _a.split(" ")[1];
+        const email = req.email;
+        const user = yield Auth_service_1.default.FindUser({ email: email });
+        if (!user) {
+            throw new ErrorHandler_1.default('password with this email not found', 401);
+        }
+        const hashedPassword = yield (0, HashPassword_1.HashPassword)(password);
+        const updatedUser = yield Auth_service_1.default.CreateUserOrUpdate(user, { _id: user._id, password: hashedPassword });
+        if (!updatedUser) {
+            throw new ErrorHandler_1.default('unable to update user with password');
+        }
+        res.status(200).json({
+            msg: 'reset password successfully',
+            user: updatedUser
+        });
+    }
+    catch (error) {
+        next(error);
+    }
+});
+// logout api
+const logoutController = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    // best practice:- create different model to blacklist token refer uber repo
+    try {
+        const email = req.email;
+        const user = yield Auth_service_1.default.FindUser({ email: email });
+        if (!user) {
+            throw new ErrorHandler_1.default('user not found with this email');
+        }
+        // clearing cookies 
+        res.clearCookie('AccessToken', {
+            httpOnly: true,
+            secure: false,
+            sameSite: 'lax'
+        });
+        res.clearCookie('RefreshToken', {
+            httpOnly: true,
+            secure: false,
+            sameSite: 'lax'
+        });
+        res.status(200).json({
+            error: false,
+            msg: 'user logged out'
+        });
+    }
+    catch (error) {
+        next(error);
+    }
+});
 exports.default = {
     getUserById,
     loginUser,
     registerUser,
-    logout,
+    logoutController,
     refreshToken,
     verifyMailController,
     forgetPasswordController,

@@ -10,8 +10,10 @@ const router = express.Router()
 router.get('/user',AuthenticateUser,AuthController.getUserById)
 router.post('/login',AuthController.loginUser)
 router.post('/register',ValidationMiddleware.validateRegistrationRules,AuthController.registerUser)
-router.get('/logout',AuthController.logout)
+router.get('/logout',AuthController.logoutController)
 router.post('/verifyotp',AuthenticateUser,AuthController.verifyMailController)
+router.post('/forget-password',AuthController.forgetPasswordController)
+router.post('/reset-password',AuthenticateUser,AuthController.resetPasswordController)
 
 
 

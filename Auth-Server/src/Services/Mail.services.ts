@@ -1,4 +1,5 @@
 import getOtp from "../utils/generateOtp"
+import Handlers from "../utils/Handlers"
 import { transporter } from "../utils/MailHandler"
 
 interface user {
@@ -23,7 +24,7 @@ interface user {
 const SendVerificationMail = async (user:user) => {
 
             const verificationOtp = getOtp(6) 
-            const verificationLink = `http://localhost:5173/verifyotp?userId=${user._id}`
+            const verificationLink = `${process.env.BASE_URL}/verifyotp?userId=${user._id}`
             const mailOptions = {
                 from:process.env.EMAIL_USER,
                 to:user?.email,
@@ -33,7 +34,25 @@ const SendVerificationMail = async (user:user) => {
             }
             await transporter.sendMail(mailOptions)
             return verificationOtp
-
 }
 
-export default {SendVerificationMail}
+const SendResetPasswordMail = async (user:user) => {
+
+    const token =  Handlers.generateJwtToken({email:user.email},60*60)
+
+    const resetPasswordLink = `${process.env.BASE_URL}/reset-password?token=${token}`
+    const mailOptions = {
+        from:process.env.EMAIL_USER,
+        to:user?.email,
+        subject:'Reset Password',
+        // text:`Welcome to Auth-Project your account has been created with email ${user.email}`,
+        html:`<b>reset the password by clicking this <a href=${resetPasswordLink}>reset password</a></b>`
+    }
+    await transporter.sendMail(mailOptions)
+    return token
+}
+
+export default {
+    SendVerificationMail,
+    SendResetPasswordMail
+}
