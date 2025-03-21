@@ -14,6 +14,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const UserModel_1 = __importDefault(require("../Models/UserModel"));
 const ErrorHandler_1 = __importDefault(require("../utils/ErrorHandler"));
+const FindAllUsers = () => __awaiter(void 0, void 0, void 0, function* () {
+    // const query = [];   // here email or id or username present we add it an array and then pass that array to $or[] here bcoz we dont pass null value to $or[]
+    // if (id) query.push({ _id: id });
+    // if (email) query.push({ email });
+    // if (username) query.push({ username });
+    let allUsers = UserModel_1.default.find({});
+    if (!allUsers) {
+        throw new ErrorHandler_1.default('users not available', 401);
+    }
+    return allUsers;
+});
 const FindUser = (_a) => __awaiter(void 0, [_a], void 0, function* ({ id, email, username = '', selectedField = null }) {
     const query = []; // here email or id or username present we add it an array and then pass that array to $or[] here bcoz we dont pass null value to $or[]
     if (id)
@@ -52,6 +63,7 @@ const CreateUserOrUpdate = (userData_1, ...args_1) => __awaiter(void 0, [userDat
 });
 exports.default = {
     FindUser,
-    CreateUserOrUpdate
+    CreateUserOrUpdate,
+    FindAllUsers
 };
 // In this above findUser service code, the select method is used with a string containing the fields to exclude, each prefixed with a minus sign (-). This ensures that the otp, password, and refreshtoken fields are not included in the result returned by the FindUser function.

@@ -18,9 +18,26 @@ interface updatedUser {
     verificationOtp?:string,
     id?:string
     [key: string]: any,
-    password?:string
+    password?:string,
+    role?:string
     
 }
+
+
+const FindAllUsers = async () => {
+    // const query = [];   // here email or id or username present we add it an array and then pass that array to $or[] here bcoz we dont pass null value to $or[]
+    // if (id) query.push({ _id: id });
+    // if (email) query.push({ email });
+    // if (username) query.push({ username });
+ 
+     let allUsers = UserModel.find({});
+ 
+     if(!allUsers){
+         throw new ErrorHandler('users not available',401)
+     }
+ 
+    return allUsers
+ }
 
 
 const FindUser = async ({ id, email, username = '',selectedField = null}:PropsType) => {
@@ -67,7 +84,8 @@ const CreateUserOrUpdate = async (userData:CreateUserType,updatedUser:updatedUse
 
 export default {
     FindUser,
-    CreateUserOrUpdate
+    CreateUserOrUpdate,
+    FindAllUsers
 }
 
 

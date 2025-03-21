@@ -25,6 +25,29 @@ import { error } from 'console'
 // }
 
 
+const getAllUsers = async (req: Request, res: Response, next: NextFunction)=>{
+
+    try {
+        // extract userId that we attched in middleware here if user/:userid then req.params.userId if in headers/query then req.query.params
+        const email = req.email
+        console.log('userEmail', email)
+
+        const user = await AuthService.FindAllUsers() // we dont want these fields from db document so we use select mongoose method
+
+
+        res.status(200).json({
+            msg: 'users fetched..',
+            data: user
+        })
+
+    } catch (error: any) {
+
+        // throw new ErrorHandler(error)
+        next(error)
+
+    }
+
+}
 
 // get userById api
 const getUserById = async (req: Request, res: Response, next: NextFunction) => {
@@ -167,15 +190,16 @@ const registerUser = async (req: Request, res: Response, next: NextFunction): Pr
         // hash the password 
         const hashedPassword = await HashPassword(data.password)
 
-        const token = Handlers.generateJwtToken({ email: data.email }, 60 * 60)
-        const refreshToken = Handlers.generateJwtToken({ email: data.email }, '7d')
+        const token = Handlers.generateJwtToken({ email: data.email,role:data.role }, 60 * 60)
+        const refreshToken = Handlers.generateJwtToken({ email: data.email,role:data.role }, '7d')
 
         const userData = {
             username: data.username,
             email: data.email,
             password: hashedPassword,
             token: token,
-            refreshToken: refreshToken
+            refreshToken: refreshToken,
+            role:data.role
         }
 
 
@@ -444,6 +468,7 @@ export default {
     refreshToken,
     verifyMailController,
     forgetPasswordController,
-    resetPasswordController
+    resetPasswordController,
+    getAllUsers
 
 }

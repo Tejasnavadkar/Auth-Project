@@ -3,7 +3,8 @@ import ErrorHandler from "./ErrorHandler";
 
 export interface payload{
     _id?:string,
-    email:string
+    email:string,
+    role?:string
 }
 
 

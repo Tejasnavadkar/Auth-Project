@@ -30,7 +30,12 @@ const UserSchema = new mongoose.Schema({
     email_Verified:{
         type:Boolean,
         default:false  // use lowercase 'default'
-       
+    },
+    role:{
+        type:String,
+        enum:['user','admin'],   // dono me se ek role hoga user or admin
+        default:'user'
+
     }
 })
 

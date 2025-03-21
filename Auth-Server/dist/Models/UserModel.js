@@ -33,6 +33,11 @@ const UserSchema = new mongoose_1.default.Schema({
     email_Verified: {
         type: Boolean,
         default: false // use lowercase 'default'
+    },
+    role: {
+        type: String,
+        enum: ['user', 'admin'], // dono me se ek role hoga user or admin
+        default: 'user'
     }
 });
 const UserModel = mongoose_1.default.model('User', UserSchema);

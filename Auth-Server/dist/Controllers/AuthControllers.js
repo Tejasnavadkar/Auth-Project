@@ -29,6 +29,22 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 //     refreshToken?: string | null | undefined;
 //     otp?: string | null | undefined;
 // }
+const getAllUsers = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // extract userId that we attched in middleware here if user/:userid then req.params.userId if in headers/query then req.query.params
+        const email = req.email;
+        console.log('userEmail', email);
+        const user = yield Auth_service_1.default.FindAllUsers(); // we dont want these fields from db document so we use select mongoose method
+        res.status(200).json({
+            msg: 'users fetched..',
+            data: user
+        });
+    }
+    catch (error) {
+        // throw new ErrorHandler(error)
+        next(error);
+    }
+});
 // get userById api
 const getUserById = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -134,14 +150,15 @@ const registerUser = (req, res, next) => __awaiter(void 0, void 0, void 0, funct
         // console.log('data-',req.body)
         // hash the password 
         const hashedPassword = yield (0, HashPassword_1.HashPassword)(data.password);
-        const token = Handlers_1.default.generateJwtToken({ email: data.email }, 60 * 60);
-        const refreshToken = Handlers_1.default.generateJwtToken({ email: data.email }, '7d');
+        const token = Handlers_1.default.generateJwtToken({ email: data.email, role: data.role }, 60 * 60);
+        const refreshToken = Handlers_1.default.generateJwtToken({ email: data.email, role: data.role }, '7d');
         const userData = {
             username: data.username,
             email: data.email,
             password: hashedPassword,
             token: token,
-            refreshToken: refreshToken
+            refreshToken: refreshToken,
+            role: data.role
         };
         const CreatedUser = yield Auth_service_1.default.CreateUserOrUpdate(userData);
         if (!CreatedUser) {
@@ -328,5 +345,6 @@ exports.default = {
     refreshToken,
     verifyMailController,
     forgetPasswordController,
-    resetPasswordController
+    resetPasswordController,
+    getAllUsers
 };

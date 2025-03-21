@@ -3,11 +3,13 @@ import AuthController from '../Controllers/AuthControllers'
 import {body} from 'express-validator'
 import ValidationMiddleware from '../Middlewares/ValidationMiddleware'
 import { AuthenticateUser } from '../Middlewares/AuthenticateUser'
+import { AuthRole } from '../Middlewares/AuthRole'
 
 const router = express.Router()
 
 
 router.get('/user',AuthenticateUser,AuthController.getUserById)
+router.get('/allUsers',AuthenticateUser,AuthRole("admin"),AuthController.getAllUsers)
 router.post('/login',AuthController.loginUser)
 router.post('/register',ValidationMiddleware.validateRegistrationRules,AuthController.registerUser)
 router.get('/logout',AuthController.logoutController)
