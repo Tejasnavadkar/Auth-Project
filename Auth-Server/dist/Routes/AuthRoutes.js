@@ -17,4 +17,6 @@ router.get('/logout', AuthControllers_1.default.logoutController);
 router.post('/verifyotp', AuthenticateUser_1.AuthenticateUser, AuthControllers_1.default.verifyMailController);
 router.post('/forget-password', AuthControllers_1.default.forgetPasswordController);
 router.post('/reset-password', AuthenticateUser_1.AuthenticateUser, AuthControllers_1.default.resetPasswordController);
+router.post('/send-sms', AuthenticateUser_1.AuthenticateUser, AuthControllers_1.default.sendSmsOtpController);
+router.post('/verify-smsotp', AuthenticateUser_1.AuthenticateUser, AuthControllers_1.default.verifySmsOtpController);
 exports.default = router;

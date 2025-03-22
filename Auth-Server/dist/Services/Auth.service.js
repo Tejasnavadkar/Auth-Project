@@ -25,7 +25,7 @@ const FindAllUsers = () => __awaiter(void 0, void 0, void 0, function* () {
     }
     return allUsers;
 });
-const FindUser = (_a) => __awaiter(void 0, [_a], void 0, function* ({ id, email, username = '', selectedField = null }) {
+const FindUser = (_a) => __awaiter(void 0, [_a], void 0, function* ({ id, email, username = '', phone, selectedField = null }) {
     const query = []; // here email or id or username present we add it an array and then pass that array to $or[] here bcoz we dont pass null value to $or[]
     if (id)
         query.push({ _id: id });
@@ -33,6 +33,8 @@ const FindUser = (_a) => __awaiter(void 0, [_a], void 0, function* ({ id, email,
         query.push({ email });
     if (username)
         query.push({ username });
+    if (phone)
+        query.push({ phone });
     let userQuery = UserModel_1.default.findOne({ $or: query });
     if (!userQuery) {
         throw new ErrorHandler_1.default('user not found', 401);

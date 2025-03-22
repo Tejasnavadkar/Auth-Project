@@ -14,6 +14,7 @@ import getOtp from '../utils/generateOtp'
 import jwt from 'jsonwebtoken'
 import { strict } from 'assert'
 import { error } from 'console'
+import SmsService from '../Services/Sms.service'
 
 // interface userType{
 //     email: string;
@@ -199,7 +200,8 @@ const registerUser = async (req: Request, res: Response, next: NextFunction): Pr
             password: hashedPassword,
             token: token,
             refreshToken: refreshToken,
-            role:data.role
+            role:data.role,
+            phone:data.phone
         }
 
 
@@ -330,7 +332,7 @@ const verifyMailController = async (req: Request, res: Response, next: NextFunct
        }
 
       const updatedUser = await AuthService.CreateUserOrUpdate(user,{_id:user?._id,email_Verified:true})
-      console.log('updatedUser--',updatedUser)
+    //   console.log('updatedUser--',updatedUser)
       res.status(201).json({
         msg:'Email verification successful',
         user:updatedUser
@@ -423,6 +425,77 @@ const resetPasswordController = async (req: Request, res: Response, next: NextFu
 
 }
 
+const sendSmsOtpController = async (req: Request, res: Response, next: NextFunction) => {
+  
+    try { 
+        const {phone} = req.body
+    //  console.log('userId--',userId)
+       const user = await AuthService.FindUser({phone:phone})
+
+       if(!user){
+        throw new ErrorHandler('user with this phone not found',401)
+       }
+
+    //   creat and send sms to phone number
+      const verificationOtp = SmsService.sendSmsToPhone(user)
+
+     const updatedUser = AuthService.CreateUserOrUpdate(user,{id:user._id.toString(),smsOtp:verificationOtp})
+       
+
+    //   console.log('updatedUser--',updatedUser)
+      res.status(201).json({
+        msg:'Sms sent successfully',
+        user:updatedUser
+      })
+      return
+
+    } catch (error) {
+
+        next(error)
+        
+    }
+
+
+   
+
+
+
+}
+
+// verify sms otp
+const verifySmsOtpController = async (req: Request, res: Response, next: NextFunction) => {
+  
+    try { 
+        const {smsOtp} = req.body
+        const email = req.email
+    //  console.log('userId--',userId)
+       const user = await AuthService.FindUser({email:email})
+
+       if(!user){
+        throw new ErrorHandler('user with this email not found',401)
+       }
+
+    if(smsOtp !== user.smsOtp){
+        throw new ErrorHandler('otp not mached')
+    }
+
+    //   console.log('updatedUser--',updatedUser)
+      res.status(201).json({
+        error:false,
+        msg:'Sms verification successful',
+      })
+      return
+
+    } catch (error) {
+
+        next(error)
+        
+    }
+
+}
+
+
+
 // logout api
 const logoutController = async (req: Request, res: Response, next: NextFunction) => {
 
@@ -469,6 +542,8 @@ export default {
     verifyMailController,
     forgetPasswordController,
     resetPasswordController,
-    getAllUsers
+    getAllUsers,
+    sendSmsOtpController,
+    verifySmsOtpController
 
 }

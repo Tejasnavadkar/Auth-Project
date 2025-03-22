@@ -26,6 +26,14 @@ const UserSchema = new mongoose_1.default.Schema({
     refreshToken: {
         type: String,
     },
+    phone: {
+        type: String,
+        unique: true
+    },
+    smsOtp: {
+        type: String,
+        max: 6
+    },
     otp: {
         type: String,
         max: 6

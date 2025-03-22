@@ -4,14 +4,16 @@ import ErrorHandler from "../utils/ErrorHandler"
 interface CreateUserType {
     username:string,
     email:string,
-    password:string
+    password:string,
+    
 }
 
 interface PropsType { 
     id?:string, 
     email?:string, 
     username?:string,
-    selectedField?:string[] | null
+    selectedField?:string[] | null,
+    phone?:string
 }
 
 interface updatedUser {
@@ -40,11 +42,12 @@ const FindAllUsers = async () => {
  }
 
 
-const FindUser = async ({ id, email, username = '',selectedField = null}:PropsType) => {
+const FindUser = async ({ id, email, username = '',phone,selectedField = null}:PropsType) => {
    const query = [];   // here email or id or username present we add it an array and then pass that array to $or[] here bcoz we dont pass null value to $or[]
    if (id) query.push({ _id: id });
    if (email) query.push({ email });
    if (username) query.push({ username });
+   if (phone) query.push({ phone });
 
     let userQuery = UserModel.findOne({ $or: query });
 

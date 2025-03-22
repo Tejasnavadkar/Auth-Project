@@ -16,6 +16,8 @@ router.get('/logout',AuthController.logoutController)
 router.post('/verifyotp',AuthenticateUser,AuthController.verifyMailController)
 router.post('/forget-password',AuthController.forgetPasswordController)
 router.post('/reset-password',AuthenticateUser,AuthController.resetPasswordController)
+router.post('/send-sms',AuthenticateUser,AuthController.sendSmsOtpController)
+router.post('/verify-smsotp',AuthenticateUser,AuthController.verifySmsOtpController)
 
 
 

@@ -21,5 +21,5 @@ db_1.default.ConnectDb();
 app.use(express_1.default.json()); // for body parser
 app.use((0, cookie_parser_1.default)());
 app.use('/api/auth', index_1.default.authRoutes);
-app.use(Error_Middleware_1.handleError); // always place it at end
+app.use(Error_Middleware_1.handleError); // always place error handler middleware at end
 app.listen(port, () => console.log(`server started at ${port}`));

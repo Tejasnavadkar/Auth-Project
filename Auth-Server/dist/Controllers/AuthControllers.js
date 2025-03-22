@@ -21,6 +21,7 @@ const ErrorHandler_1 = __importDefault(require("../utils/ErrorHandler"));
 const Mail_services_1 = __importDefault(require("../Services/Mail.services"));
 const FieldValidation_1 = __importDefault(require("../utils/FieldValidation"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const Sms_service_1 = __importDefault(require("../Services/Sms.service"));
 // interface userType{
 //     email: string;
 //     username: string;
@@ -158,7 +159,8 @@ const registerUser = (req, res, next) => __awaiter(void 0, void 0, void 0, funct
             password: hashedPassword,
             token: token,
             refreshToken: refreshToken,
-            role: data.role
+            role: data.role,
+            phone: data.phone
         };
         const CreatedUser = yield Auth_service_1.default.CreateUserOrUpdate(userData);
         if (!CreatedUser) {
@@ -247,7 +249,7 @@ const verifyMailController = (req, res, next) => __awaiter(void 0, void 0, void 
             throw new ErrorHandler_1.default('otp not matched');
         }
         const updatedUser = yield Auth_service_1.default.CreateUserOrUpdate(user, { _id: user === null || user === void 0 ? void 0 : user._id, email_Verified: true });
-        console.log('updatedUser--', updatedUser);
+        //   console.log('updatedUser--',updatedUser)
         res.status(201).json({
             msg: 'Email verification successful',
             user: updatedUser
@@ -308,6 +310,52 @@ const resetPasswordController = (req, res, next) => __awaiter(void 0, void 0, vo
         next(error);
     }
 });
+const sendSmsOtpController = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { phone } = req.body;
+        //  console.log('userId--',userId)
+        const user = yield Auth_service_1.default.FindUser({ phone: phone });
+        if (!user) {
+            throw new ErrorHandler_1.default('user with this phone not found', 401);
+        }
+        //   creat and send sms to phone number
+        const verificationOtp = Sms_service_1.default.sendSmsToPhone(user);
+        const updatedUser = Auth_service_1.default.CreateUserOrUpdate(user, { id: user._id.toString(), smsOtp: verificationOtp });
+        //   console.log('updatedUser--',updatedUser)
+        res.status(201).json({
+            msg: 'Sms sent successfully',
+            user: updatedUser
+        });
+        return;
+    }
+    catch (error) {
+        next(error);
+    }
+});
+// verify sms otp
+const verifySmsOtpController = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { smsOtp } = req.body;
+        const email = req.email;
+        //  console.log('userId--',userId)
+        const user = yield Auth_service_1.default.FindUser({ email: email });
+        if (!user) {
+            throw new ErrorHandler_1.default('user with this email not found', 401);
+        }
+        if (smsOtp !== user.smsOtp) {
+            throw new ErrorHandler_1.default('otp not mached');
+        }
+        //   console.log('updatedUser--',updatedUser)
+        res.status(201).json({
+            error: false,
+            msg: 'Sms verification successful',
+        });
+        return;
+    }
+    catch (error) {
+        next(error);
+    }
+});
 // logout api
 const logoutController = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     // best practice:- create different model to blacklist token refer uber repo
@@ -346,5 +394,7 @@ exports.default = {
     verifyMailController,
     forgetPasswordController,
     resetPasswordController,
-    getAllUsers
+    getAllUsers,
+    sendSmsOtpController,
+    verifySmsOtpController
 };
