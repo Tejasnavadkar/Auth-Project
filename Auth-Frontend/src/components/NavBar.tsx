@@ -1,11 +1,31 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Avatar, Button, Dropdown, Navbar } from 'flowbite-react'
 import { SiFusionauth } from "react-icons/si";
 import { useNavigate } from 'react-router-dom';
+import axiosInstance from '../axiosConfig';
 const NavBar = () => {
 
-  const isAuthenticated:boolean = false
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const navigate = useNavigate()
+
+  useEffect(()=>{
+   const token =  localStorage.getItem('AccessToken')
+   setIsAuthenticated(token ? true : false)
+  },[])
+  console.log('nav')
+
+  const HandleLogout = async () =>{
+
+   const response = await axiosInstance.get(`api/auth/logout`)
+
+    if(response.status == 200){
+      localStorage.clear()
+      setIsAuthenticated(false)
+    }
+
+  }
+
+  
 
   return (
     <div>
@@ -32,7 +52,7 @@ const NavBar = () => {
           <Dropdown.Item>Settings</Dropdown.Item>
           <Dropdown.Item>Earnings</Dropdown.Item>
           <Dropdown.Divider />
-          <Dropdown.Item>Sign out</Dropdown.Item>
+          <Dropdown.Item onClick={()=>HandleLogout()}>Sign out</Dropdown.Item>
         </Dropdown>
         <Navbar.Toggle />
       </>): <Button  gradientDuoTone='tealToLime' onClick={()=>navigate('/login')} >Login</Button>}

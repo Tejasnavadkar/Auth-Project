@@ -130,18 +130,29 @@
 import { Button } from 'flowbite-react'
 import React, { useEffect, useState } from 'react'
 import { SiFusionauth } from 'react-icons/si'
+import axiosInstance from '../../axiosConfig'
+import { useNavigate } from 'react-router-dom'
 
 const VerifyOtp = () => {
 
+   const [otp,setOtp] = useState<string[]>([])
+  const navigate = useNavigate()
+
+//    const handleChange = (e) =>{
+
+    
+
+//    }
+console.log('otp-',otp)
    const otpLength:number = 6
 
     useEffect(() => {
         console.log('this',this)
         const focusNextInput = (el, prevId, nextId) => {
             // console.log('this',el) active input box element element 
-            console.log('prevId',prevId)
-            console.log('nextId',nextId)
-            console.log('el.value.length--',el.value.length)
+            // console.log('prevId',prevId)
+            // console.log('nextId',nextId)
+            // console.log('el.value.length--',el.value.length)
             if (el.value.length === 0) {  
                 if (prevId) {                   // here agar input field blanck o jaye and uske pichle wala element hai to focus on previous element
                         
@@ -194,6 +205,28 @@ const VerifyOtp = () => {
         });
     }, []);
 
+    const handleSubmit = async (e) =>{
+         e.preventDefault()
+       
+      try {
+        if(otp.length !== otpLength){
+            return alert(`invalid otp`)
+        }
+        const otpPayload = {
+            otp:otp.join("").toString()
+        }
+         console.log('otpPayload--',otpPayload)
+       const response = await axiosInstance.post(`/api/auth/verifyotp`,otpPayload)
+       if(response.status === 201){
+         return navigate('/')
+       }
+
+    
+      } catch (error:any) {
+        alert(`${error.response.data.message}`)
+      }
+    }
+
     return (
         <div>
             <div className="flex flex-col items-center gap-4">
@@ -201,7 +234,7 @@ const VerifyOtp = () => {
                 <h1 className="text-2xl font-bold mb-10">Verify Email By OTP</h1>
             </div>
 
-            <form className="max-w-sm mx-auto">
+            <form onSubmit={handleSubmit} className="max-w-sm mx-auto">
                 <div className="flex justify-center mb-2 space-x-2 rtl:space-x-reverse">
                     {[...Array(otpLength)].map((_, idx) => (
                         <div key={idx}>
@@ -217,6 +250,12 @@ const VerifyOtp = () => {
                                 id={`code-${idx + 1}`}
                                 className="block w-9 h-9 py-3 text-sm font-extrabold text-center text-gray-900 bg-white border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
                                 required
+                                onChange={(e)=>setOtp(prev=>{
+                                    return [
+                                        ...prev,
+                                        e.target.value
+                                    ]
+                                })}
                             />
                         </div>
                     ))}

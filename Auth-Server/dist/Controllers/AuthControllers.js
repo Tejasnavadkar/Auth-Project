@@ -244,7 +244,6 @@ const verifyMailController = (req, res, next) => __awaiter(void 0, void 0, void 
         if (!user) {
             throw new ErrorHandler_1.default('user with this userId not found', 401);
         }
-        console.log(user.otp, otp);
         if ((user === null || user === void 0 ? void 0 : user.otp) !== otp) {
             throw new ErrorHandler_1.default('otp not matched');
         }

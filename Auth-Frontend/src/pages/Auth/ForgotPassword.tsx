@@ -1,20 +1,38 @@
 import { Button } from 'flowbite-react'
 import React, { useState } from 'react'
 import { SiFusionauth } from 'react-icons/si'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import CustomInput from '../../components/common/CustomInput'
+import axiosInstance from '../../axiosConfig'
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('')
+  const [errors, setErrors] = useState('')
+  const navigate = useNavigate()
 
   const HandleChange = (e: React.FormEvent<HTMLInputElement>) => {
     setEmail((e.target as HTMLInputElement).value)
 
   }
 
-  const HandleSubmit = (e) => {
+  const HandleSubmit = async (e) => {
     e.preventDefault()
-    console.log('email-',email)
+    console.log('email-', email)
+    try {
+
+      const payload = {
+        email: email
+      }
+
+      const response = await axiosInstance.post(`/api/auth/forget-password`, payload)
+
+      if (response.status === 201) {
+        return navigate('/reset-password')
+      }
+
+    } catch (error: any) {
+      setErrors(error.response.data.message)
+    }
 
   }
 
@@ -26,13 +44,17 @@ const ForgotPassword = () => {
           <span className=" whitespace-nowrap text-xl font-bold dark:text-white">Forgot Password</span>
         </div>
 
-        <CustomInput
-          label='Enter Email'
-          className='rounded-md'
-          placeholder={'enter your Email'}
-          onChange={HandleChange}
-          name='email'
-        />
+        <div>
+          <CustomInput
+            label='Enter Email'
+            className='rounded-md'
+            placeholder={'enter your Email'}
+            onChange={HandleChange}
+            name='email'
+          />
+          <span className='text-xm text-red-900'>{errors && errors}</span>
+        </div>
+
 
         <div>
           <Button

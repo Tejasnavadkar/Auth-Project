@@ -6,7 +6,9 @@ interface InputType{
     className:string,
     placeholder:string,
     name:string,
-    type?:string
+    type?:string,
+    value?:string,
+    registerInfo?:object
     
 }
 

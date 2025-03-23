@@ -1,23 +1,34 @@
 import React, { useState } from 'react'
 import CustomInput from '../../components/common/CustomInput'
 import { SiFusionauth } from 'react-icons/si'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Button } from 'flowbite-react'
+import axiosInstance from '../../axiosConfig'
 
 interface LoginInfo {
-    name:string,
+    email:string,
     password:string,
     rememberMe:boolean
 }
+// interface handleChange {
+//     target:{
+//         name:string,
+//         value:string,
+//         type:string,
+//         checked:string
+//     }
+// }
 
 const Login = () => {
    const [loginInfo,setLoginInfo] = useState<LoginInfo>({
-        name:'',
+        email:'',
         password:'',
         rememberMe:false
     })
 
-    const HandleChange = (e) =>{
+   const navigate = useNavigate()
+
+    const HandleChange = (e:React.ChangeEvent<HTMLInputElement>) =>{
         
         const {name,value,type,checked} = e.target
         setLoginInfo((prev)=>{
@@ -29,9 +40,26 @@ const Login = () => {
 
     }
 
-    const HandleSubmit = (e) =>{
+    const HandleSubmit = async (e:React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         console.log(loginInfo)
+       try {
+        const payloadBody:Omit<LoginInfo,'rememberMe'> = {
+            email:loginInfo.email,
+            password:loginInfo.password
+        }
+
+       const response = await axiosInstance.post(`/api/auth/login`,payloadBody)
+
+       if(response.status === 201){
+        localStorage.setItem('AccessToken',response.data.AccessToken)
+        localStorage.setItem('refreshToken',response.data.refreshToken)
+        return navigate('/')
+       }
+       } catch (error:any) {
+        console.error('err while lohin',error)
+        throw new Error(error)
+       }
     }
 
     return (
@@ -43,11 +71,12 @@ const Login = () => {
                 </div>
             
                     <CustomInput
-                        label='Your Name'
+                        label='Email'
                         className='rounded-md'
-                        placeholder={'enter your name'}
+                        placeholder={'enter your email'}
                         onChange={HandleChange}
-                        name='name'
+                        name='email'
+                        type='email'
                     />
                     <CustomInput
                         label='Password'

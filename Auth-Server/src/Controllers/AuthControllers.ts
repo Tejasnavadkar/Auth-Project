@@ -325,8 +325,6 @@ const verifyMailController = async (req: Request, res: Response, next: NextFunct
         throw new ErrorHandler('user with this userId not found',401)
        }
 
-       console.log(user.otp,otp)
-
        if(user?.otp !== otp){
         throw new ErrorHandler('otp not matched')
        }
