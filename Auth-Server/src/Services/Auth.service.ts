@@ -21,7 +21,8 @@ interface updatedUser {
     id?:string
     [key: string]: any,
     password?:string,
-    role?:string
+    role?:string,
+    phoneNumber_Verified?:boolean
     
 }
 

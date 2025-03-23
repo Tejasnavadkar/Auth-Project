@@ -445,7 +445,7 @@ const sendSmsOtpController = async (req: Request, res: Response, next: NextFunct
     //   console.log('updatedUser--',updatedUser)
       res.status(201).json({
         msg:'Sms sent successfully',
-        user:updatedUser
+        otp:verificationOtp
       })
       return
 
@@ -454,12 +454,6 @@ const sendSmsOtpController = async (req: Request, res: Response, next: NextFunct
         next(error)
         
     }
-
-
-   
-
-
-
 }
 
 // verify sms otp
@@ -479,10 +473,13 @@ const verifySmsOtpController = async (req: Request, res: Response, next: NextFun
         throw new ErrorHandler('otp not mached')
     }
 
+   const updatedUser = await AuthService.CreateUserOrUpdate(user,{id:user._id.toString(),phoneNumber_Verified:true})
+
     //   console.log('updatedUser--',updatedUser)
       res.status(201).json({
         error:false,
         msg:'Sms verification successful',
+        updatedUser:updatedUser
       })
       return
 

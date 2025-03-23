@@ -39,6 +39,10 @@ const UserSchema = new mongoose.Schema({
         type:Boolean,
         default:false  // use lowercase 'default'
     },
+    phoneNumber_Verified:{
+        type:Boolean,
+        default:false
+    },
     role:{
         type:String,
         enum:['user','admin'],   // dono me se ek role hoga user or admin

@@ -324,7 +324,7 @@ const sendSmsOtpController = (req, res, next) => __awaiter(void 0, void 0, void 
         //   console.log('updatedUser--',updatedUser)
         res.status(201).json({
             msg: 'Sms sent successfully',
-            user: updatedUser
+            otp: verificationOtp
         });
         return;
     }
@@ -345,10 +345,12 @@ const verifySmsOtpController = (req, res, next) => __awaiter(void 0, void 0, voi
         if (smsOtp !== user.smsOtp) {
             throw new ErrorHandler_1.default('otp not mached');
         }
+        const updatedUser = yield Auth_service_1.default.CreateUserOrUpdate(user, { id: user._id.toString(), phoneNumber_Verified: true });
         //   console.log('updatedUser--',updatedUser)
         res.status(201).json({
             error: false,
             msg: 'Sms verification successful',
+            updatedUser: updatedUser
         });
         return;
     }

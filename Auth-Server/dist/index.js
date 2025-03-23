@@ -10,6 +10,7 @@ const index_1 = __importDefault(require("./Routes/index"));
 const db_1 = __importDefault(require("./Db/db"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const Error_Middleware_1 = require("./Middlewares/Error.Middleware");
+const LoginRateLimiter_1 = __importDefault(require("./Middlewares/LoginRateLimiter"));
 const app = (0, express_1.default)();
 const port = 3000;
 // interface CustomRequest extends Request {}
@@ -17,6 +18,7 @@ const port = 3000;
 // app.get('/', (req: Request, res: Response) => {
 //     res.json({ msg: 'hii there' });
 // });
+app.use(LoginRateLimiter_1.default); // rate limiting middleware
 db_1.default.ConnectDb();
 app.use(express_1.default.json()); // for body parser
 app.use((0, cookie_parser_1.default)());

@@ -5,6 +5,7 @@ import routes from './Routes/index'
 import db from './Db/db';
 import cookieParser from 'cookie-parser';
 import { handleError } from './Middlewares/Error.Middleware';
+import loginLimiter from './Middlewares/LoginRateLimiter';
 
 
 const app = express()
@@ -16,6 +17,7 @@ const port = 3000
 //     res.json({ msg: 'hii there' });
 // });
 
+app.use(loginLimiter) // rate limiting middleware
 db.ConnectDb()
 
 app.use(express.json()) // for body parser
