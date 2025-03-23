@@ -11,6 +11,7 @@ const db_1 = __importDefault(require("./Db/db"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const Error_Middleware_1 = require("./Middlewares/Error.Middleware");
 const LoginRateLimiter_1 = __importDefault(require("./Middlewares/LoginRateLimiter"));
+const helmet_1 = __importDefault(require("helmet"));
 const app = (0, express_1.default)();
 const port = 3000;
 // interface CustomRequest extends Request {}
@@ -20,6 +21,7 @@ const port = 3000;
 // });
 app.use(LoginRateLimiter_1.default); // rate limiting middleware
 db_1.default.ConnectDb();
+app.use((0, helmet_1.default)()); //to secure it against common web vulnerabilities such as Cross-Site Scripting (XSS), Clickjacking, and Cross-Site Request Forgery (CSRF).
 app.use(express_1.default.json()); // for body parser
 app.use((0, cookie_parser_1.default)());
 app.use('/api/auth', index_1.default.authRoutes);

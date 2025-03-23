@@ -6,6 +6,7 @@ import db from './Db/db';
 import cookieParser from 'cookie-parser';
 import { handleError } from './Middlewares/Error.Middleware';
 import loginLimiter from './Middlewares/LoginRateLimiter';
+import helmet from 'helmet';
 
 
 const app = express()
@@ -19,7 +20,7 @@ const port = 3000
 
 app.use(loginLimiter) // rate limiting middleware
 db.ConnectDb()
-
+app.use(helmet()) //to secure it against common web vulnerabilities such as Cross-Site Scripting (XSS), Clickjacking, and Cross-Site Request Forgery (CSRF).
 app.use(express.json()) // for body parser
 app.use(cookieParser())
 app.use('/api/auth',routes.authRoutes)
